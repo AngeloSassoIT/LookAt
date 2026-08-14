@@ -739,6 +739,124 @@ def pagina_404(base_url: str) -> str:
 """
 
 
+# ───────────────────────────────────────────── indirizzi per App Store Connect
+
+# Nome della lingua come lo scrive App Store Connect nell'elenco delle
+# localizzazioni: serve solo al documento, ma è quello che si legge nel pannello
+# mentre si incolla, e cercare «nl-NL» in una lista che dice «Olandese» fa
+# perdere tempo.
+NOMI_ASC = {
+    "en-GB": "Inglese (Regno Unito)", "en-US": "Inglese (Stati Uniti)",
+    "it": "Italiano", "es-ES": "Spagnolo (Spagna)", "es-MX": "Spagnolo (Messico)",
+    "fr-FR": "Francese (Francia)", "de-DE": "Tedesco", "pt-BR": "Portoghese (Brasile)",
+    "nl-NL": "Olandese", "ja": "Giapponese", "ko": "Coreano",
+    "zh-Hans": "Cinese semplificato", "zh-Hant": "Cinese tradizionale",
+}
+PRIMARIA = "en-GB"
+
+
+def url_scheda(base_url: str) -> dict:
+    """{loc ASC: {campo: URL}} — l'unica funzione che sa comporre gli indirizzi."""
+    fuori = {}
+    for loc in LINGUE:
+        cartella = CARTELLA[loc] + "/" if CARTELLA[loc] else ""
+        fuori[loc] = {
+            "privacy_url": f"{base_url}/{cartella}privacy.html",
+            "support_url": f"{base_url}/{cartella}support.html",
+            "marketing_url": f"{base_url}/{cartella}index.html",
+        }
+    return fuori
+
+
+def scrivi_url_asc(base_url: str) -> None:
+    """Scrive i .txt che legge `fastlane deliver` e il documento da consultare.
+
+    I .txt finiscono in `AppStore/metadata/<loc>/`, cioè nella SORGENTE: il
+    pacchetto di deliver (`AppStore/fastlane/metadata/`) è fatto di link
+    simbolici a questi file e lo rigenera `prepara-deliver.sh`. Scrivere nel
+    pacchetto significherebbe vedersi il lavoro cancellato al primo `--senza-novita`.
+    """
+    indirizzi = url_scheda(base_url)
+    sorgente_meta = APPSTORE / "metadata"
+    scritti = 0
+    for loc, campi in indirizzi.items():
+        cartella = sorgente_meta / loc
+        if not cartella.exists():
+            raise SystemExit(f"manca {cartella}: il pacchetto della scheda non ha la lingua {loc}")
+        for campo, u in campi.items():
+            (cartella / f"{campo}.txt").write_text(u + "\n", encoding="utf-8")
+            scritti += 1
+
+    righe = [
+        "# Indirizzi della scheda App Store — LookAt",
+        "",
+        "> **Generato**, non scritto a mano: `website/_sorgenti/genera-sito.py "
+        "--base-url … --scrivi-url-asc`.",
+        "> Se cambia il dominio del sito si rilancia quel comando, non si corregge questo file.",
+        "",
+        f"Sito: <{base_url}/>  ·  13 lingue  ·  lingua primaria della scheda: **{PRIMARIA}**",
+        "",
+        "## Dove va ciascun campo, in App Store Connect",
+        "",
+        "| Campo | Dove sta in ASC | Per lingua? |",
+        "|---|---|---|",
+        "| **URL informativa privacy** | *Informazioni sull'app* → *Informativa sulla privacy* "
+        "(vale per tutte le versioni) | **sì** |",
+        "| **URL di assistenza** | pagina della **versione** 1.0 → *Informazioni generali* | **sì** |",
+        "| **URL marketing** (facoltativo) | pagina della **versione** 1.0 → *Informazioni generali* | **sì** |",
+        "",
+        "⚠️ I primi due sono **obbligatori** per l'invio: un indirizzo che risponde 404 è un "
+        "motivo di rifiuto, non un avviso.",
+        "",
+        "⚠️ L'informativa privacy sta su *Informazioni sull'app*, non sulla versione: cambiando "
+        "lingua nel menu in alto a destra si cambia la localizzazione che si sta modificando. "
+        "È l'errore che fa credere di averle compilate tutte avendone compilata una.",
+        "",
+        "## Gli indirizzi, lingua per lingua",
+        "",
+        "| Lingua (come la chiama ASC) | Codice | URL informativa privacy | URL di assistenza | URL marketing |",
+        "|---|---|---|---|---|",
+    ]
+    for loc in LINGUE:
+        c = indirizzi[loc]
+        nome = NOMI_ASC[loc] + (" ⭐️" if loc == PRIMARIA else "")
+        righe.append(f"| {nome} | `{loc}` | <{c['privacy_url']}> | <{c['support_url']}> "
+                     f"| <{c['marketing_url']}> |")
+
+    righe += [
+        "",
+        "⭐️ = lingua primaria della scheda.",
+        "",
+        "## Solo l'informativa privacy, pronta da incollare",
+        "",
+        "```",
+    ]
+    larghezza = max(len(NOMI_ASC[l]) for l in LINGUE)
+    for loc in LINGUE:
+        righe.append(f"{NOMI_ASC[loc]:<{larghezza}}  {indirizzi[loc]['privacy_url']}")
+    righe += [
+        "```",
+        "",
+        "## Caricarli senza incollare nulla",
+        "",
+        "```bash",
+        "cd \"iOS DEV/LookAt/AppStore\"",
+        "fastlane urls           # controlla che ogni indirizzo risponda 200, poi lo scrive su ASC",
+        "fastlane urls dry:true  # solo il controllo, non scrive niente",
+        "```",
+        "",
+        "La lane **non scrive un indirizzo che non risponde 200**: si ferma e dice quale manca. "
+        "Serve davvero — il 14 ago 2026 sei lingue del sito non erano state caricate su GitHub "
+        "Pages e i loro indirizzi rispondevano 404 pur essendo scritti correttamente qui.",
+        "",
+        "Gli stessi indirizzi stanno anche in `metadata/<loc>/privacy_url.txt`, `support_url.txt` "
+        "e `marketing_url.txt`, quindi li carica anche `fastlane schede` insieme ai testi.",
+        "",
+    ]
+    (APPSTORE / "URL-SCHEDA.md").write_text("\n".join(righe), encoding="utf-8")
+    print(f"· {scritti} file *_url.txt in AppStore/metadata/ · AppStore/URL-SCHEDA.md")
+
+
 # ─────────────────────────────────────────────────────────────── verifiche
 
 def verifica(base_url: str, nomi_coppie: dict) -> None:
@@ -800,6 +918,9 @@ def main() -> None:
     ap.add_argument("--app-store", default="",
                     help="URL della scheda App Store. Senza, il bottone dice «presto» e non è un link.")
     ap.add_argument("--forza", action="store_true", help="rigenera anche le immagini")
+    ap.add_argument("--scrivi-url-asc", action="store_true",
+                    help="scrive AppStore/metadata/<loc>/{privacy,support,marketing}_url.txt "
+                         "e AppStore/URL-SCHEDA.md. Richiede --base-url.")
     args = ap.parse_args()
 
     base_url = args.base_url.rstrip("/")
@@ -867,6 +988,12 @@ def main() -> None:
             encoding="utf-8")
     else:
         (SITO / "sitemap.xml").unlink(missing_ok=True)
+
+    if args.scrivi_url_asc:
+        if not base_url:
+            raise SystemExit("--scrivi-url-asc richiede --base-url: senza, gli indirizzi "
+                             "da incollare in App Store Connect non esistono.")
+        scrivi_url_asc(base_url)
 
     verifica(base_url, nomi_coppie)
 

@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /_sorgenti/
+Sitemap: https://angelosassoit.github.io/LookAt/sitemap.xml
