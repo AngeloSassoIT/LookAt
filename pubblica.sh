@@ -18,7 +18,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-REPO="https://github.com/angelosassoit/LookAt.git"
+# ⚠️ Maiuscole come le scrive GitHub: con `angelosassoit` il push funziona lo
+# stesso ma risponde «This repository moved», perché il nome canonico
+# dell'account è AngeloSassoIT. L'indirizzo del sito resta invece tutto
+# minuscolo: quello è un nome di host.
+REPO="https://github.com/AngeloSassoIT/LookAt.git"
 RAMO="main"
 SITO="https://angelosassoit.github.io/LookAt"
 
