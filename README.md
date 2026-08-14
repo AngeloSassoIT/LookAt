@@ -184,5 +184,19 @@ da quello che l'app mostra in quella lingua.
 - Insegna dimostrativa, contrasto, menu delle lingue, tasto Esc, rinvio
   automatico per `it-IT`, `de-CH`, `zh-TW`, `pt-PT`, `sv-SE`: **provati in
   browser**, nessun errore in console.
-- **Non provato**: il sito su GitHub Pages vero (dipende dal caricamento) e la
-  resa su Safari iOS reale — le prove sono state fatte con Chromium.
+- **Online su GitHub Pages**: 39 pagine su 39 rispondono 200 e la loro impronta
+  SHA-256 è identica ai file locali — **verificato**, non dedotto dal push.
+- Gli indirizzi di `privacy.html` e `support.html` sono **caricati su App Store
+  Connect** in tutte e 13 le lingue (`AppStore/URL-SCHEDA.md`), e ognuno è stato
+  chiamato prima di essere scritto.
+- **Non provato**: la resa su Safari iOS reale — le prove sono state fatte con
+  Chromium.
+
+### Due errori silenziosi già pagati, qui
+
+1. **Il caricamento a mano si è fermato a metà senza dirlo.** 20 pagine su 39,
+   `.nojekyll` scartato perché inizia con un punto, sito apparentemente online e
+   sei lingue che rispondevano 404. Da qui `pubblica.sh`.
+2. **La CDN ha continuato a servire la versione precedente**, rispondendo 200 con
+   dentro un testo appena tolto. Da qui il confronto delle impronte, invece del
+   solo codice di stato.
